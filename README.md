@@ -1,39 +1,41 @@
 # Agent Ops
 
-Painel de operações de agentes por Thales Sakano, com Next.js, React, TypeScript e Tailwind.
+An agent operations dashboard by Thales Sakano, built with Next.js, React, TypeScript, and Tailwind.
 
-- **`/` — demonstração pública:** tarefas, aprovações, relatórios e métricas simulados. Sem credenciais e sem execução externa.
-- **`/live` — monitoramento privado:** consultas reais ao OpenClaw Gateway e ao dashboard Hermes, protegidas por login do operador.
+- **`/` — public demo:** simulated tasks, approvals, reports, and metrics. No credentials or external execution.
+- **`/live` — private monitoring:** real queries to the OpenClaw Gateway and Hermes dashboard, protected by operator login.
 
-O portfólio Sakano Lab continua usando a demonstração. Esta instalação independente contém os conectores reais.
+The Sakano Lab portfolio continues to use the demo. This standalone installation includes the live connectors.
 
-## Executar
+## Getting started
 
-Node.js 22 ou superior:
+Requires Node.js 22 or later:
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Abra http://localhost:3000. A demonstração funciona sem configuração. Para produção, use `npm run build` e `npm start` em um servidor Node com HTTPS no proxy reverso. O modo Live exige backend Node; não funciona como exportação estática.
+Open http://localhost:3000. The demo requires no configuration. For production, run `npm run build` and `npm start` on a Node server with HTTPS at the reverse proxy. Live mode requires a Node backend and does not support static export.
 
-## Modo Live
+<a id="modo-live"></a>
 
-1. Copie `.env.example` para `.env.local`.
-2. Defina `AGENT_OPS_PASSWORD` (mínimo 16 caracteres) e `AGENT_OPS_SESSION_SECRET` (mínimo 32). Use valores aleatórios diferentes. Para gerar cada um:
+## Live mode
+
+1. Copy `.env.example` to `.env.local`.
+2. Set `AGENT_OPS_PASSWORD` (at least 16 characters) and `AGENT_OPS_SESSION_SECRET` (at least 32). Use different random values. Generate each value with:
 
    ```sh
    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    ```
 
-3. Defina `AGENT_OPS_ORIGIN` como a **origem exata usada no navegador**: por exemplo `http://localhost:3000` no desenvolvimento, ou `https://agents.example.com` em produção. `localhost` e `127.0.0.1` são origens diferentes. Ajuste também a porta.
-4. Configure um ou ambos os provedores abaixo. Reinicie o servidor após editar o ambiente.
-5. Abra `/live`, entre com a senha do Agent Ops, selecione o provedor e clique em **Consultar agora**.
+3. Set `AGENT_OPS_ORIGIN` to the **exact origin used in your browser**, such as `http://localhost:3000` for development or `https://agents.example.com` for production. `localhost` and `127.0.0.1` are different origins. Match the port as well.
+4. Configure one or both providers below. Restart the server after editing the environment.
+5. Open `/live`, sign in with your Agent Ops password, select a provider, and use the query button.
 
-O login expira em oito horas. Cookies são HTTP-only e SameSite Strict, com Secure em HTTPS. As APIs de dados validam a sessão em todas as chamadas e retornam `Cache-Control: no-store`. Trocar a senha ou a chave de sessão invalida os logins existentes. Sem segredos válidos, o acesso fica desabilitado.
+Operator sessions expire after eight hours. Cookies are HTTP-only and SameSite Strict, with Secure enabled over HTTPS. Data APIs validate the session on every request and return `Cache-Control: no-store`. Changing either the password or session secret invalidates existing logins. Access remains disabled until valid secrets are configured.
 
-As credenciais dos provedores ficam no backend. Não coloque valores reais em código, URLs, variáveis `NEXT_PUBLIC_`, commits ou na demonstração do portfólio. `.env.local` e `.data/` são ignorados pelo Git.
+Provider credentials stay on the backend. Never put real values in source code, URLs, `NEXT_PUBLIC_` variables, commits, or the portfolio demo. Git ignores `.env.local` and `.data/`.
 
 ### OpenClaw
 
@@ -43,27 +45,27 @@ OPENCLAW_TOKEN=
 OPENCLAW_DEVICE_FILE=.data/openclaw-device.json
 ```
 
-Preencha `OPENCLAW_TOKEN` com a credencial do gateway. Para gateways configurados com senha, use `OPENCLAW_PASSWORD` e deixe `OPENCLAW_TOKEN` vazio. Exatamente uma das duas deve estar configurada.
+Set `OPENCLAW_TOKEN` to your gateway credential. For gateways configured with password authentication, use `OPENCLAW_PASSWORD` and leave `OPENCLAW_TOKEN` empty. Configure exactly one of these credentials.
 
-O conector recebe `connect.challenge`, assina o nonce e o timestamp com Ed25519 e solicita **apenas `operator.read`**. Negocia protocolo 3 ou 4. Depois de autenticar, consulta `agents.list` e `sessions.list` (até 100 sessões). A credencial e qualquer device token retornado pelo gateway não são enviados ao navegador.
+The connector receives `connect.challenge`, signs the nonce and timestamp with Ed25519, and requests **only `operator.read`**. It negotiates protocol version 3 or 4. After authentication, it queries `agents.list` and `sessions.list` (up to 100 sessions). Neither the credential nor any device token returned by the gateway is sent to the browser.
 
-Na primeira consulta, a identidade é criada em `OPENCLAW_DEVICE_FILE`. Se o gateway exigir pareamento:
+The first query creates an identity at `OPENCLAW_DEVICE_FILE`. If the gateway requires pairing:
 
-1. Consulte no Agent Ops para gerar a solicitação. A interface mostra o ID do dispositivo.
-2. No ambiente administrativo do seu OpenClaw, execute `openclaw devices list` e confira o dispositivo/solicitação pendente correspondente.
-3. Aprove a solicitação correta com `openclaw devices approve <requestId>` e consulte novamente no Agent Ops. O dispositivo precisa ter o escopo `operator.read` autorizado.
+1. Query the gateway from Agent Ops to create a pairing request. The interface displays the device ID.
+2. In your OpenClaw administrative environment, run `openclaw devices list` and identify the matching pending device/request.
+3. Approve the correct request with `openclaw devices approve <requestId>`, then query again in Agent Ops. The device must be authorized for the `operator.read` scope.
 
-Não desative autenticação ou pareamento para conectar. O conector roda no **servidor**, e não no navegador: não exige liberar CORS nem adicionar a origem do Agent Ops à lista do Control UI para este cliente. O proxy deve aceitar upgrade WebSocket, e a política do gateway ainda precisa permitir a identidade e a credencial.
+Keep authentication and pairing enabled. The connector runs on the **server**, so this client does not require CORS changes or adding the Agent Ops origin to the Control UI allowlist. The proxy must support WebSocket upgrades, and gateway policy must permit the device identity and credential.
 
-Persista a identidade entre deploys. Em containers, monte um volume privado e configure o caminho absoluto. Em Windows, limite as permissões NTFS ao usuário do serviço; `mode: 0600` é aplicado onde suportado. Não exclua o arquivo para resolver erros de conexão: isso cria um novo dispositivo e exige novo pareamento. Gateways sem credencial compartilhada, com autenticação somente por trusted proxy, não são suportados por este conector.
+Persist the identity across deployments. In containers, mount a private volume and configure an absolute path. On Windows, restrict NTFS permissions to the service account; `mode: 0600` is applied where supported. Do not delete the identity file to troubleshoot connection errors: doing so creates a new device that requires pairing again. Gateways using only trusted-proxy authentication, without a shared credential, are not supported by this connector.
 
-A atividade de uma sessão não é inferida pelo horário da última atualização; aparece como “Não informada” quando não há um campo de atividade utilizado pelo conector.
+Session activity is not inferred from the last update timestamp. The interface reports activity as unavailable when the connector does not use an explicit activity field.
 
 ### Hermes
 
-Use a URL do **dashboard web do Hermes**, e não uma API de modelos ou um endpoint de mensagens. O conector consulta `/api/sessions?limit=100` e `/api/status`. O status público sozinho não é considerado prova de autenticação: a consulta de sessões precisa ser aceita.
+Use the **Hermes web dashboard URL**, rather than a model API or messaging endpoint. The connector queries `/api/sessions?limit=100` and `/api/status`. Public status alone is not treated as proof of authentication: the session query must succeed.
 
-**Provider de senha**, habilitado na instalação Hermes:
+**Password provider**, enabled in your Hermes installation:
 
 ```dotenv
 HERMES_DASHBOARD_URL=https://hermes.example.com/
@@ -73,60 +75,60 @@ HERMES_USERNAME=
 HERMES_PASSWORD=
 ```
 
-Use o nome do provider configurado na sua instalação; `basic` é apenas um exemplo. O backend faz POST em `/auth/password-login`, reutiliza a sessão, preserva cookies renovados e tenta um novo login se a consulta de sessões retornar 401/403. Não inventa um token Bearer para APIs que exigem cookies. Conforme a documentação Hermes, o provider de senha se destina a rede privada/VPN; use OAuth para exposição pública.
+Use the provider name configured in your installation; `basic` is only an example. The backend posts to `/auth/password-login`, reuses the session, retains refreshed cookies, and attempts a new login if the session query returns 401/403. It uses cookie authentication rather than assuming these APIs accept a Bearer token. According to the Hermes documentation, the password provider is intended for private networks/VPNs; use OAuth for public exposure.
 
-**Sessão existente de um provider OAuth**, configuração avançada:
+**Existing OAuth provider session**, advanced configuration:
 
 ```dotenv
 HERMES_AUTH_MODE=cookie
 HERMES_SESSION_COOKIE=
 ```
 
-Forneça o valor do cabeçalho de requisição `Cookie` de uma **sessão dedicada ao Agent Ops**, incluindo os cookies de sessão/provider emitidos pelo Hermes. Não use o cabeçalho `Set-Cookie` nem atributos como `Path`/`HttpOnly`. Não compartilhe essa sessão com um navegador ativo: tokens de refresh podem ser rotacionados. O jar atualizado fica apenas na memória de uma instância do Agent Ops; renove a configuração após reiniciar o processo ou quando a sessão for revogada/expirar. Para uso contínuo em rede privada, prefira o provider de senha. Não há fluxo OAuth interativo próprio nesta versão.
+Supply the `Cookie` request-header value from a **session dedicated to Agent Ops**, including the session/provider cookies issued by Hermes. Do not use the `Set-Cookie` header or attributes such as `Path`/`HttpOnly`. Do not share this session with an active browser: refresh tokens may rotate. The updated cookie jar lives only in the memory of one Agent Ops instance; renew the configuration after restarting the process or when the session is revoked or expires. For continuous use on a private network, prefer the password provider. This release does not implement its own interactive OAuth flow.
 
-**Dashboard local sem gate de autenticação:**
+**Local dashboard without an authentication gate:**
 
 ```dotenv
 HERMES_DASHBOARD_URL=http://127.0.0.1:8642/
 HERMES_AUTH_MODE=local
 ```
 
-Use a porta real do seu dashboard. O modo `local` só permite loopback. Endereços remotos exigem HTTPS; redirects são recusados para evitar encaminhar credenciais para outra origem. Prefixos de caminho na URL do dashboard são preservados.
+Use your dashboard's actual port. The `local` mode only permits loopback addresses. Remote addresses require HTTPS; redirects are rejected to avoid forwarding credentials to another origin. Path prefixes in the dashboard URL are preserved.
 
-O Hermes retorna sessões do perfil padrão, modelo, tokens e atividade quando disponíveis. Não há um catálogo de agentes equivalente ao OpenClaw; o painel informa essa diferença. São chamadas de consulta: não enviamos comandos de execução/manutenção. O próprio Hermes pode executar manutenção automática de sessões durante seus endpoints GET, conforme sua configuração.
+Hermes returns sessions from the default profile, along with model, token, and activity data when available. It does not expose an agent catalog equivalent to OpenClaw's through this adapter; the dashboard explains that distinction. The connector makes read requests and sends no execution or maintenance commands. Hermes itself may perform automatic session maintenance during its GET endpoints, depending on its configuration.
 
-### Escopo e operação
+### Capabilities and operation
 
-| Recurso                                     | OpenClaw                         | Hermes                       |
-| ------------------------------------------- | -------------------------------- | ---------------------------- |
-| Conexão autenticada                         | WebSocket + desafio + identidade | API do dashboard + sessão    |
-| Status/versão                               | Handshake do gateway             | `/api/status`                |
-| Agentes configurados                        | Sim                              | Não disponível neste adapter |
-| Sessões, modelo e tokens                    | Até 100                          | Até 100, perfil padrão       |
-| Executar, cancelar ou aprovar tarefas reais | Não                              | Não                          |
-| Histórico de mensagens e logs               | Não                              | Não                          |
+| Feature                                | OpenClaw                         | Hermes                      |
+| -------------------------------------- | -------------------------------- | --------------------------- |
+| Authenticated connection               | WebSocket + challenge + identity | Dashboard API + session     |
+| Status/version                         | Gateway handshake                | `/api/status`               |
+| Configured agents                      | Yes                              | Unavailable in this adapter |
+| Sessions, model, and tokens            | Up to 100                        | Up to 100, default profile  |
+| Execute, cancel, or approve real tasks | No                               | No                          |
+| Message history and logs               | No                               | No                          |
 
-Os controles de execução e aprovação da página inicial continuam sendo simulações. O modo Live atualiza sob demanda, sem polling automático, e mostra o horário da última consulta.
+Execution and approval controls on the home page remain simulations. Live mode refreshes on demand, without automatic polling, and displays the time of the last query.
 
-A instalação é para um operador ou equipe de confiança, com uma senha compartilhada e uma conexão por provedor. Use uma instância persistente. O limite de login é de dez tentativas por minuto por processo; adicione limites no proxy se expuser o serviço, especialmente com réplicas. Sessões Hermes em cookie mode não devem ser compartilhadas entre réplicas. A aplicação não fornece RBAC, auditoria de usuários nem gestão multi-tenant.
+This installation is intended for one operator or a trusted team, with a shared password and one connection per provider. Use a persistent instance. Login is limited to ten attempts per minute per process; add rate limits at the proxy if you expose the service, especially when running replicas. Hermes cookie-mode sessions must not be shared across replicas. The application does not provide RBAC, user auditing, or multi-tenant management.
 
-## Diagnóstico
+## Troubleshooting
 
-- **Origem inválida:** ajuste `AGENT_OPS_ORIGIN` para a URL/porta exata do navegador e reinicie.
-- **Pareamento pendente:** aprove a solicitação correta no gateway; mantenha o arquivo de identidade.
-- **Solicitação recusada:** revise token/senha, versão e escopo `operator.read`.
-- **Falha WebSocket:** confira DNS/TLS e suporte a upgrade no proxy reverso.
-- **Hermes 401/403:** revise o provider/credenciais ou renove a sessão dedicada.
-- **Hermes redirect/HTML/resposta incompatível:** confirme que a URL aponta para o dashboard e que a versão instalada oferece os endpoints documentados.
+- **Invalid origin:** set `AGENT_OPS_ORIGIN` to the exact browser origin and port, then restart.
+- **Pairing pending:** approve the correct gateway request and retain the identity file.
+- **Request rejected:** check the token/password, protocol version, and `operator.read` scope.
+- **WebSocket failure:** check DNS/TLS and reverse-proxy upgrade support.
+- **Hermes 401/403:** check the provider/credentials or renew the dedicated session.
+- **Hermes redirect, HTML, or incompatible response:** confirm that the URL points to the dashboard and that the installed version provides the documented endpoints.
 
-O probe opcional verifica apenas o transporte, sem autenticação:
+The optional probe checks transport only, without authentication:
 
 ```powershell
 $env:OPENCLAW_GATEWAY_URL = 'wss://your-gateway.example.com/'
 npm run probe:openclaw
 ```
 
-## Verificação
+## Verification
 
 ```sh
 npm test
@@ -136,9 +138,9 @@ npm run test:live-browser
 npm audit
 ```
 
-O teste Live inicia um servidor Next e provedores locais de teste, sem usar credenciais externas. Exercita login/logout, autenticação recusada, pareamento, listagens, filtro e mobile. Testes de protocolo verificam assinaturas, persistência de identidade, expiração de sessão e renovação de cookies.
+The Live browser test starts a Next server and local test providers without external credentials. It exercises login/logout, authentication failures, pairing, listings, filtering, and mobile layout. Protocol tests verify signatures, identity persistence, session expiration, and cookie renewal.
 
-Para a demo, com servidor em execução:
+To test the demo with the application running:
 
 ```powershell
 $env:TEST_BASE_URL = 'http://localhost:3000'
@@ -146,13 +148,13 @@ $env:AGENT_OPS_PATH = '/'
 npm run test:browser
 ```
 
-Se necessário, instale Chromium com `npx playwright install chromium`. Screenshots dos testes são ignorados pelo Git. Testes locais não substituem a validação autenticada na versão e configuração da sua instalação.
+If needed, install Chromium with `npx playwright install chromium`. Git ignores test screenshots. Local tests do not replace authenticated validation against the version and configuration of your installation.
 
-## Referências de protocolo
+## Protocol references
 
 - [OpenClaw handshake](https://docs.openclaw.ai/gateway/protocol/handshake)
-- [OpenClaw autenticação](https://docs.openclaw.ai/gateway/protocol/auth)
+- [OpenClaw authentication](https://docs.openclaw.ai/gateway/protocol/auth)
 - [Hermes dashboard/API](https://hermes-agent.nousresearch.com/docs/user-guide/features/web-dashboard)
 - [Hermes password login](https://github.com/NousResearch/hermes-agent/blob/main/hermes_cli/dashboard_auth/routes.py)
 
-Nenhum deploy, serviço hospedado ou credencial de produção é provisionado pelo repositório.
+This repository does not provision a deployment, hosted service, or production credentials.
