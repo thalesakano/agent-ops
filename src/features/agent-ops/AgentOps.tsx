@@ -196,13 +196,13 @@ function Connections({ locale }: { locale: Locale }) {
         <Network className="mb-4 text-cyan-300" />
         <h2 className="text-xl font-semibold text-white">
           {pt
-            ? "Nenhuma conexão real configurada."
-            : "No live connection configured."}
+            ? "Você está na demonstração."
+            : "You are viewing the demo."}
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-400">
           {pt
-            ? "Esta versão é uma demonstração local. Os agentes, eventos e métricas são simulados. Ela não solicita tokens nem acessa seus serviços."
-            : "This version is a local demonstration. Agents, events and metrics are simulated. It does not request tokens or access your services."}
+            ? "Nesta página, agentes, eventos e métricas são simulados. A área Live separada consulta seus serviços com login de operador e credenciais configuradas no servidor."
+            : "Agents, events and metrics on this page are simulated. The separate Live area queries your services using operator login and server-side credentials."}
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
@@ -212,16 +212,16 @@ function Connections({ locale }: { locale: Locale }) {
             transport: "WebSocket Gateway",
             url: "https://docs.openclaw.ai/gateway/protocol",
             description: pt
-              ? "Um conector no servidor poderá autenticar no Gateway, respeitar o pareamento de dispositivo e consultar sessões com permissões de leitura."
-              : "A server-side connector can authenticate with the Gateway, respect device pairing and query sessions with read permissions.",
+              ? "O conector Live autentica no Gateway com identidade de dispositivo e consulta agentes e sessões com permissões de leitura."
+              : "The Live connector authenticates with a device identity and queries agents and sessions with read permissions.",
           },
           {
             name: "Hermes",
             transport: "Dashboard API",
             url: "https://hermes-agent.nousresearch.com/docs/user-guide/features/web-dashboard",
             description: pt
-              ? "Um adaptador dedicado poderá consultar status, sessões e histórico pela API autenticada da versão instalada."
-              : "A dedicated adapter can query status, sessions and history through the installed version's authenticated API.",
+              ? "O conector Live consulta status e sessões pela API do dashboard com autenticação por provider de senha ou cookie de sessão."
+              : "The Live connector queries dashboard status and sessions using password-provider or session-cookie authentication.",
           },
         ].map((item) => (
           <article
@@ -231,7 +231,7 @@ function Connections({ locale }: { locale: Locale }) {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">{item.name}</h3>
               <span className="rounded bg-white/5 px-2 py-1 text-[10px] text-zinc-500">
-                {pt ? "Integração futura" : "Future integration"}
+                {pt ? "Disponível no Live" : "Available in Live"}
               </span>
             </div>
             <p className="mt-2 font-mono text-xs text-cyan-300">

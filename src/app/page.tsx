@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { AgentOps } from "../features/agent-ops/AgentOps";
 import type { Locale } from "../features/agent-ops/model";
 export default function Page() {
@@ -11,6 +12,12 @@ export default function Page() {
           Thales Sakano / Agent Ops
         </a>
         <div className="flex gap-2">
+          <Link
+            href="/live"
+            className="rounded-full border border-cyan-300/30 px-3 py-1 text-cyan-300"
+          >
+            Live
+          </Link>
           {(["pt", "en"] as const).map((lang) => (
             <button
               key={lang}

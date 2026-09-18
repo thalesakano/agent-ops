@@ -84,7 +84,7 @@ try {
   await page.getByRole("searchbox").fill("");
   await page.getByRole("button", { name: "Conexões", exact: true }).click();
   await page
-    .getByText("Nenhuma conexão real configurada.", { exact: true })
+    .getByText("Você está na demonstração.", { exact: true })
     .waitFor();
   await page.getByRole("button", { name: "Visão geral", exact: true }).click();
   await page.screenshot({
