@@ -2,6 +2,10 @@
 
 An agent operations dashboard by Thales Sakano, built with Next.js, React, TypeScript, and Tailwind.
 
+![Agent Ops demo dashboard showing agent cards, metrics, and recent executions](docs/images/agent-ops-dashboard.png)
+
+*Dashboard preview in demo mode, with simulated data.*
+
 - **`/` — public demo:** simulated tasks, approvals, reports, and metrics. No credentials or external execution.
 - **`/live` — private monitoring:** real queries to the OpenClaw Gateway and Hermes dashboard, protected by operator login.
 
